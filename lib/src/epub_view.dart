@@ -9,7 +9,7 @@ import 'package:flutter_html/style.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' show parse;
 import 'package:flutter_html/flutter_html.dart';
-import 'package:page_turn/page_turn.dart';
+// import 'package:page_turn/page_turn.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -393,56 +393,56 @@ class _EpubViewState extends State<EpubView> {
     );
   }
 
-  Widget _horizontalBuilder(int index) {
-    if (_paragraphs.isEmpty) {
-      return Container();
-    }
+  // Widget _horizontalBuilder(int index) {
+  //   if (_paragraphs.isEmpty) {
+  //     return Container();
+  //   }
 
-    final chapterIndex = _getChapterIndexBy(positionIndex: index);
+  //   final chapterIndex = _getChapterIndexBy(positionIndex: index);
 
-    return Column(
-      children: <Widget>[
-        if (chapterIndex >= 0 &&
-            _getParagraphIndexBy(positionIndex: index) == 0)
-          _buildDivider(_chapters[chapterIndex]),
-        Html(
-          data: _paragraphs[index].element.innerHtml,
-          shrinkWrap: true,
-          onLinkTap: (href, _, __, ___) =>
-              _onLinkPressed(href!, widget.onExternalLinkPressed),
-          style: {
-            'html': Style(
-              padding: widget.paragraphPadding as EdgeInsets?,
-            ).merge(Style.fromTextStyle(widget.textStyle)),
-          },
-          customRender: {
-            'img': (context, child) {
-              final url = context.tree.element!.attributes['src']!
-                  .replaceAll('../', '');
-              return Image(
-                image: MemoryImage(
-                  Uint8List.fromList(widget
-                      .controller._document!.Content!.Images![url]!.Content!),
-                ),
-              );
-            }
-          },
-        ),
-      ],
-    );
-  }
+  //   return Column(
+  //     children: <Widget>[
+  //       if (chapterIndex >= 0 &&
+  //           _getParagraphIndexBy(positionIndex: index) == 0)
+  //         _buildDivider(_chapters[chapterIndex]),
+  //       Html(
+  //         data: _paragraphs[index].element.innerHtml,
+  //         shrinkWrap: true,
+  //         onLinkTap: (href, _, __, ___) =>
+  //             _onLinkPressed(href!, widget.onExternalLinkPressed),
+  //         style: {
+  //           'html': Style(
+  //             padding: widget.paragraphPadding as EdgeInsets?,
+  //           ).merge(Style.fromTextStyle(widget.textStyle)),
+  //         },
+  //         customRender: {
+  //           'img': (context, child) {
+  //             final url = context.tree.element!.attributes['src']!
+  //                 .replaceAll('../', '');
+  //             return Image(
+  //               image: MemoryImage(
+  //                 Uint8List.fromList(widget
+  //                     .controller._document!.Content!.Images![url]!.Content!),
+  //               ),
+  //             );
+  //           }
+  //         },
+  //       ),
+  //     ],
+  //   );
+  // }
 
-  Widget _horizontalItemBuild() {
-    var index = -1; // initial index
-    return PageTurn(
-      backgroundColor: Colors.white,
-      showDragCutoff: false,
-      children: _paragraphs.map((e) {
-        index++;
-        return SingleChildScrollView(child: _horizontalBuilder(index));
-      }).toList(),
-    );
-  }
+  // Widget _horizontalItemBuild() {
+  //   var index = -1; // initial index
+  //   return PageTurn(
+  //     backgroundColor: Colors.white,
+  //     showDragCutoff: false,
+  //     children: _paragraphs.map((e) {
+  //       index++;
+  //       return SingleChildScrollView(child: _horizontalBuilder(index));
+  //     }).toList(),
+  //   );
+  // }
 
   Widget _buildLoaded() {
     Widget _buildItem(BuildContext context, int index) =>
