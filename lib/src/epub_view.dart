@@ -9,6 +9,7 @@ import 'package:flutter_html/style.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' show parse;
 import 'package:flutter_html/flutter_html.dart';
+import 'package:page_turn/page_turn.dart';
 // import 'package:page_turn/page_turn.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:rxdart/rxdart.dart';
@@ -57,6 +58,7 @@ class EpubView extends StatefulWidget {
     this.paragraphPadding = const EdgeInsets.symmetric(horizontal: 8),
     this.textStyle = _defaultTextStyle,
     this.isHorizontalView = false,
+    this.activatePageTurn = false,
     Key? key,
   }) : super(key: key);
 
@@ -80,6 +82,7 @@ class EpubView extends StatefulWidget {
   final ChaptersBuilder? itemBuilder;
   final TextStyle textStyle;
   final bool isHorizontalView;
+  final bool activatePageTurn;
 
   @override
   _EpubViewState createState() => _EpubViewState();
@@ -103,7 +106,9 @@ class _EpubViewState extends State<EpubView> {
 
   @override
   void initState() {
-    _itemScrollController = ItemScrollController();
+    _itemScrollController = ItemScrollController(
+      
+    );
     _itemPositionListener = ItemPositionsListener.create();
     widget.controller._attach(this);
     super.initState();
@@ -358,92 +363,65 @@ class _EpubViewState extends State<EpubView> {
 
     final chapterIndex = _getChapterIndexBy(positionIndex: index);
 
-    return Column(
-      children: <Widget>[
-        if (chapterIndex >= 0 &&
-            _getParagraphIndexBy(positionIndex: index) == 0)
-          _buildDivider(_chapters[chapterIndex]),
-        Html(
-          data: _paragraphs[index].element.innerHtml,
-          onLinkTap: (href, _, __, ___) =>
-              _onLinkPressed(href!, widget.onExternalLinkPressed),
-          style: {
-            'html': Style(
-              padding: widget.paragraphPadding as EdgeInsets?,
-            ).merge(Style.fromTextStyle(widget.textStyle)),
-          },
-          customRender: {
-            'img': (context, child) {
-              final url = context.tree.element!.attributes['src']!
-                  .replaceAll('../', '');
-              return Image(
-                image: MemoryImage(
-                  Uint8List.fromList(widget
-                      .controller._document!.Content!.Images![url]!.Content!),
-                ),
-              );
-            }
-          },
-        ),
-      ],
+    return SingleChildScrollView(
+      scrollDirection:
+          widget.isHorizontalView ? Axis.vertical : Axis.horizontal,
+      child: Column(
+        children: <Widget>[
+          if (chapterIndex >= 0 &&
+              _getParagraphIndexBy(positionIndex: index) == 0)
+            _buildDivider(_chapters[chapterIndex]),
+          Html(
+            data: _paragraphs[index].element.innerHtml,
+            onLinkTap: (href, _, __, ___) =>
+                _onLinkPressed(href!, widget.onExternalLinkPressed),
+            style: {
+              'html': Style(
+                padding: widget.paragraphPadding as EdgeInsets?,
+              ).merge(Style.fromTextStyle(widget.textStyle)),
+            },
+            customRender: {
+              'img': (context, child) {
+                final url = context.tree.element!.attributes['src']!
+                    .replaceAll('../', '');
+                return Image(
+                  image: MemoryImage(
+                    Uint8List.fromList(widget
+                        .controller._document!.Content!.Images![url]!.Content!),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+      ),
     );
   }
 
-  // Widget _horizontalBuilder(int index) {
-  //   if (_paragraphs.isEmpty) {
-  //     return Container();
-  //   }
+  Widget _horizontalItemBuild() {
+    var index = -1; // initial index
+    return PageTurn(
+      backgroundColor: Colors.white,
+      showDragCutoff: false,
+      children: _paragraphs.map((e) {
+        index++;
+        if (_paragraphs[index].element.innerHtml.isNotEmpty) {
+          return _defaultItemBuilder(index);
+        }
 
-  //   final chapterIndex = _getChapterIndexBy(positionIndex: index);
-
-  //   return Column(
-  //     children: <Widget>[
-  //       if (chapterIndex >= 0 &&
-  //           _getParagraphIndexBy(positionIndex: index) == 0)
-  //         _buildDivider(_chapters[chapterIndex]),
-  //       Html(
-  //         data: _paragraphs[index].element.innerHtml,
-  //         shrinkWrap: true,
-  //         onLinkTap: (href, _, __, ___) =>
-  //             _onLinkPressed(href!, widget.onExternalLinkPressed),
-  //         style: {
-  //           'html': Style(
-  //             padding: widget.paragraphPadding as EdgeInsets?,
-  //           ).merge(Style.fromTextStyle(widget.textStyle)),
-  //         },
-  //         customRender: {
-  //           'img': (context, child) {
-  //             final url = context.tree.element!.attributes['src']!
-  //                 .replaceAll('../', '');
-  //             return Image(
-  //               image: MemoryImage(
-  //                 Uint8List.fromList(widget
-  //                     .controller._document!.Content!.Images![url]!.Content!),
-  //               ),
-  //             );
-  //           }
-  //         },
-  //       ),
-  //     ],
-  //   );
-  // }
-
-  // Widget _horizontalItemBuild() {
-  //   var index = -1; // initial index
-  //   return PageTurn(
-  //     backgroundColor: Colors.white,
-  //     showDragCutoff: false,
-  //     children: _paragraphs.map((e) {
-  //       index++;
-  //       return SingleChildScrollView(child: _horizontalBuilder(index));
-  //     }).toList(),
-  //   );
-  // }
+        return Container();
+      }).toList(),
+    );
+  }
 
   Widget _buildLoaded() {
     Widget _buildItem(BuildContext context, int index) =>
         widget.itemBuilder?.call(context, _chapters, _paragraphs, index) ??
         _defaultItemBuilder(index);
+
+    if (widget.activatePageTurn && widget.isHorizontalView) {
+      return _horizontalItemBuild();
+    }
 
     return ScrollablePositionedList.builder(
       initialScrollIndex: _epubCfiReader!.paragraphIndexByCfiFragment ?? 0,
@@ -452,7 +430,12 @@ class _EpubViewState extends State<EpubView> {
       itemPositionsListener: _itemPositionListener,
       scrollDirection:
           widget.isHorizontalView ? Axis.horizontal : Axis.vertical,
-      itemBuilder: _buildItem,
+      itemBuilder: (context, index) {
+        if (_paragraphs[index].element.innerHtml.isNotEmpty) {
+          return _buildItem(context, index);
+        }
+        return Container();
+      },
     );
   }
 
