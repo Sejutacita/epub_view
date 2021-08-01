@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
+import 'package:epub_view/src/ui/horizontal_view/horizontal_page.dart';
 import 'package:epubx/epubx.dart' hide Image;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -384,7 +385,7 @@ class _EpubViewState extends State<EpubView> {
                         .controller._document!.Content!.Images![url]!.Content!),
                   ),
                 );
-              }
+              },
             },
           ),
         ],
@@ -396,8 +397,13 @@ class _EpubViewState extends State<EpubView> {
     Widget _buildItem(BuildContext context, int index) =>
         _defaultItemBuilder(index);
 
-    if (widget.isHorizontalView && widget.itemBuilder != null) {
-      return widget.itemBuilder!.call(context, _chapters, _paragraphs, 0);
+    if (widget.isHorizontalView) {
+      // return widget.itemBuilder!.call(context, _chapters, _paragraphs, 0);
+      return HorizontalPageView(
+        paragraph: _paragraphs,
+        style: widget.textStyle,
+        onPageChanged: (val) {},
+      );
     }
 
     return ScrollablePositionedList.builder(
