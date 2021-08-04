@@ -39,7 +39,7 @@ class SplittedTextImpl extends SplittedText {
         currentPageEndIndex =
             textPainter.getPositionForOffset(Offset(left, top)).offset;
         final pageText =
-            text.substring(currentPageStartIndex, currentPageEndIndex) ?? "";
+            text.substring(currentPageStartIndex, currentPageEndIndex);
         _pageTexts.add(pageText);
 
         currentPageStartIndex = currentPageEndIndex;
@@ -47,7 +47,7 @@ class SplittedTextImpl extends SplittedText {
       }
     }
 
-    final lastPageText = text.substring(currentPageStartIndex) ?? "";
+    final lastPageText = text.substring(currentPageStartIndex);
     _pageTexts.add(lastPageText);
     return _pageTexts;
   }

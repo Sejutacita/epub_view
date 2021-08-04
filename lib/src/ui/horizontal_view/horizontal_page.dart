@@ -6,10 +6,10 @@ import 'package:flutter_html/flutter_html.dart';
 
 class HorizontalPageView extends StatelessWidget {
   const HorizontalPageView({
-    Key? key,
     required this.paragraph,
     required this.onPageChanged,
     this.style,
+    Key? key,
   }) : super(key: key);
 
   final List<Paragraph> paragraph;
@@ -17,23 +17,49 @@ class HorizontalPageView extends StatelessWidget {
   final TextStyle? style;
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => PageControlBloc(),
-      child: HorizontalPage(
-        style: style ?? TextStyle(),
-        paragraph: paragraph,
-        onPageChanged: onPageChanged,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => BlocProvider(
+        create: (context) => PageControlBloc(),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: HorizontalPage(
+            style: style ?? TextStyle(),
+            paragraph: paragraph,
+            onPageChanged: onPageChanged,
+          ),
+        ),
+      );
+}
+
+class EpubBookChapterView extends StatelessWidget {
+  EpubBookChapterView({required this.chapter, required this.style});
+
+  final EpubChapter chapter;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+        child: Container(
+          margin: EdgeInsets.only(
+            right: 8,
+            left: 8,
+          ),
+          child: Html(
+            data: chapter.HtmlContent,
+            style: {
+              'html': Style(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+              ).merge(Style.fromTextStyle(style)),
+            },
+          ),
+        ),
+      );
 }
 
 class HorizontalPage extends StatefulWidget {
   const HorizontalPage({
-    Key? key,
     required this.style,
     required this.paragraph,
+    Key? key,
     this.onPageChanged,
   }) : super(key: key);
 
@@ -63,24 +89,22 @@ class _HorizontalPageState extends State<HorizontalPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        key: pageKey,
-        // child: PageTurn(
-        //   backgroundColor: widget.state.pageColor,
-        //   children: controlBloc.splittedTextList.map((e) {
-        //     return Text(e, style: widget.style);
-        //   }).toList(),
-        // ),
-        child: PageView.builder(
-          controller: _pageController,
-          onPageChanged: (val) {
-            controlBloc?.changeState(val);
-          },
-          itemCount: controlBloc?.splittedTextList.length,
-          itemBuilder: (context, index) {
-            return Html(
+  Widget build(BuildContext context) => Expanded(
+        child: Container(
+          key: pageKey,
+          // child: PageTurn(
+          //   backgroundColor: widget.state.pageColor,
+          //   children: controlBloc.splittedTextList.map((e) {
+          //     return Text(e, style: widget.style);
+          //   }).toList(),
+          // ),
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: (val) {
+              controlBloc?.changeState(val);
+            },
+            itemCount: controlBloc?.splittedTextList.length,
+            itemBuilder: (context, index) => Html(
               data: controlBloc?.splittedTextList[index],
               shrinkWrap: true,
               style: {
@@ -88,17 +112,8 @@ class _HorizontalPageState extends State<HorizontalPage> {
                   padding: EdgeInsets.symmetric(horizontal: 8),
                 ).merge(Style.fromTextStyle(widget.style)),
               },
-            );
-            // Padding(
-            //   padding: const EdgeInsets.symmetric(horizontal: 8),
-            //   child: Text(
-            //     controlBloc.splittedTextList[index],
-            //     style: widget.style,
-            //   ),
-            // );
-          },
+            ),
+          ),
         ),
-      ),
-    );
-  }
+      );
 }

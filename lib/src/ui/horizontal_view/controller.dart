@@ -7,19 +7,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 class PageControlBloc extends Cubit<int> {
   PageControlBloc() : super(0);
 
-  DynamicSize _dynamicSize = DynamicSizeImpl();
-  SplittedText _splittedText = SplittedTextImpl();
+  final DynamicSize _dynamicSize = DynamicSizeImpl();
+  final SplittedText _splittedText = SplittedTextImpl();
   Size? _size;
   List<String> _splittedTextList = [];
   List<String> get splittedTextList => _splittedTextList;
 
-  getSizeFromBloc(GlobalKey pagekey) {
+  void getSizeFromBloc(GlobalKey pagekey) {
     _size = _dynamicSize.getSize(pagekey);
     print(_size);
   }
 
-  getSplittedTextFromBloc(TextStyle textStyle, List<Paragraph> paragraph) {
-    var text = paragraph.map((e) => e.element.innerHtml).toList();
+  void getSplittedTextFromBloc(TextStyle textStyle, List<Paragraph> paragraph) {
+    final text = paragraph.map((e) => e.element.innerHtml).toList();
 
     _splittedTextList =
         _splittedText.getSplittedText(_size!, textStyle, text.join());
@@ -31,8 +31,17 @@ class PageControlBloc extends Cubit<int> {
 }
 
 class HorizontalChapterPage {
-  HorizontalChapterPage(this.index, this.listString);
-  
+  HorizontalChapterPage(this.index, this.htmlText);
+
   final int index;
-  final List<String> listString;
+  final String htmlText;
+}
+
+class DisplayedHtml {
+  DisplayedHtml(this.startIndex, this.endIndex, this.page, this.htmlText);
+
+  final int startIndex;
+  final int endIndex;
+  final int page;
+  final List<String> htmlText;
 }

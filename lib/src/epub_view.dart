@@ -6,7 +6,6 @@ import 'package:epub_view/src/ui/horizontal_view/horizontal_page.dart';
 import 'package:epubx/epubx.dart' hide Image;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_html/style.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' show parse;
 import 'package:flutter_html/flutter_html.dart';
@@ -399,10 +398,32 @@ class _EpubViewState extends State<EpubView> {
 
     if (widget.isHorizontalView) {
       // return widget.itemBuilder!.call(context, _chapters, _paragraphs, 0);
-      return HorizontalPageView(
-        paragraph: _paragraphs,
-        style: widget.textStyle,
-        onPageChanged: (val) {},
+      // return HorizontalPageView(
+      //   paragraph: _paragraphs,
+      //   style: widget.textStyle,
+      //   onPageChanged: (val) {},
+      // );
+
+      return PageView.builder(
+        itemCount: _chapters.length,
+        onPageChanged: (val) {
+          _currentValue = EpubChapterViewValue(
+            chapter: _chapters[val],
+            chapterNumber: val + 1,
+            paragraphNumber: 1,
+            position: _itemPositionListener!.itemPositions.value.first,
+          );
+          _actualChapter.sink.add(_currentValue);
+          widget.onChange?.call(_currentValue);
+        },
+        itemBuilder: (BuildContext context, int index) {
+          final chapter = _chapters[index];
+
+          return EpubBookChapterView(
+            chapter: chapter,
+            style: widget.textStyle,
+          );
+        },
       );
     }
 
