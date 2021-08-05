@@ -42,13 +42,18 @@ class EpubController {
     Duration duration = const Duration(milliseconds: 250),
     double alignment = 0,
     Curve curve = Curves.linear,
-  }) =>
+  }) {
+    if (_epubViewState?.widget.isHorizontalView ?? false) {
+      _epubViewState?._horizontalPageController?.jumpToPage(index);
+    } else {
       _epubViewState?._itemScrollController?.scrollTo(
         index: index,
         duration: duration,
         alignment: alignment,
         curve: curve,
       );
+    }
+  }
 
   void gotoEpubCfi(
     String epubCfi, {

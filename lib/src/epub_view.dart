@@ -100,10 +100,13 @@ class _EpubViewState extends State<EpubView> {
       BehaviorSubject();
   final BehaviorSubject<bool> _bookLoaded = BehaviorSubject();
 
+  PageController? _horizontalPageController;
+
   @override
   void initState() {
     _itemScrollController = ItemScrollController();
     _itemPositionListener = ItemPositionsListener.create();
+    _horizontalPageController = PageController();
     widget.controller._attach(this);
     super.initState();
   }
@@ -111,6 +114,7 @@ class _EpubViewState extends State<EpubView> {
   @override
   void dispose() {
     _itemPositionListener!.itemPositions.removeListener(_changeListener);
+    _horizontalPageController?.dispose();
     _actualChapter.close();
     widget.controller._detach();
     super.dispose();
@@ -365,47 +369,43 @@ class _EpubViewState extends State<EpubView> {
           if (chapterIndex >= 0 &&
               _getParagraphIndexBy(positionIndex: index) == 0)
             _buildDivider(_chapters[chapterIndex]),
-          Html(
-            data: _paragraphs[index].element.innerHtml,
-            onLinkTap: (href, _, __, ___) =>
-                _onLinkPressed(href!, widget.onExternalLinkPressed),
-            style: {
-              'html': Style(
-                padding: widget.paragraphPadding as EdgeInsets?,
-              ).merge(Style.fromTextStyle(widget.textStyle)),
-            },
-            customRender: {
-              'img': (context, child) {
-                final url = context.tree.element!.attributes['src']!
-                    .replaceAll('../', '');
-                return Image(
-                  image: MemoryImage(
-                    Uint8List.fromList(widget
-                        .controller._document!.Content!.Images![url]!.Content!),
-                  ),
-                );
-              },
-            },
-          ),
+          htmlContent(_paragraphs[index].element.innerHtml),
         ],
       ),
     );
   }
+
+  Widget htmlContent(String htmlString) => Html(
+        data: htmlString,
+        onLinkTap: (href, _, __, ___) =>
+            _onLinkPressed(href!, widget.onExternalLinkPressed),
+        style: {
+          'html': Style(
+            padding: widget.paragraphPadding as EdgeInsets?,
+          ).merge(Style.fromTextStyle(widget.textStyle)),
+        },
+        customRender: {
+          'img': (context, child) {
+            final url =
+                context.tree.element!.attributes['src']!.replaceAll('../', '');
+            return Image(
+              image: MemoryImage(
+                Uint8List.fromList(widget
+                    .controller._document!.Content!.Images![url]!.Content!),
+              ),
+            );
+          },
+        },
+      );
 
   Widget _buildLoaded() {
     Widget _buildItem(BuildContext context, int index) =>
         _defaultItemBuilder(index);
 
     if (widget.isHorizontalView) {
-      // return widget.itemBuilder!.call(context, _chapters, _paragraphs, 0);
-      // return HorizontalPageView(
-      //   paragraph: _paragraphs,
-      //   style: widget.textStyle,
-      //   onPageChanged: (val) {},
-      // );
-
       return PageView.builder(
         itemCount: _chapters.length,
+        controller: _horizontalPageController,
         onPageChanged: (val) {
           _currentValue = EpubChapterViewValue(
             chapter: _chapters[val],
@@ -422,6 +422,7 @@ class _EpubViewState extends State<EpubView> {
           return EpubBookChapterView(
             chapter: chapter,
             style: widget.textStyle,
+            content: htmlContent(chapter.HtmlContent ?? ''),
           );
         },
       );
