@@ -6,11 +6,11 @@ import 'package:epub_view/src/ui/horizontal_view/horizontal_page.dart';
 import 'package:epubx/epubx.dart' hide Image;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' show parse;
-import 'package:flutter_html/flutter_html.dart';
-import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import 'epub_cfi/generator.dart';
 import 'epub_cfi/interpreter.dart';
@@ -18,10 +18,10 @@ import 'epub_cfi/parser.dart';
 
 export 'package:epubx/epubx.dart' hide Image;
 
+part 'epub_cfi_reader.dart';
+part 'epub_controller.dart';
 part 'epub_data.dart';
 part 'epub_parser.dart';
-part 'epub_controller.dart';
-part 'epub_cfi_reader.dart';
 
 const MIN_TRAILING_EDGE = 0.55;
 const MIN_LEADING_EDGE = -0.05;
@@ -353,9 +353,8 @@ class _EpubViewState extends State<EpubView> {
           ),
         ),
       );
-
   Widget _defaultItemBuilder(int index) {
-    if (_paragraphs.isEmpty) {
+    if (_chapters[index].HtmlContent!.isEmpty) {
       return Container();
     }
 
@@ -369,7 +368,7 @@ class _EpubViewState extends State<EpubView> {
           if (chapterIndex >= 0 &&
               _getParagraphIndexBy(positionIndex: index) == 0)
             _buildDivider(_chapters[chapterIndex]),
-          htmlContent(_paragraphs[index].element.innerHtml),
+          htmlContent(_chapters[index].HtmlContent!),
         ],
       ),
     );
@@ -382,7 +381,14 @@ class _EpubViewState extends State<EpubView> {
         style: {
           'html': Style(
             padding: widget.paragraphPadding as EdgeInsets?,
+            textAlign: TextAlign.justify,
           ).merge(Style.fromTextStyle(widget.textStyle)),
+          'h1': Style(
+            textAlign: TextAlign.left,
+          ).merge(Style.fromTextStyle(widget.textStyle.copyWith(
+            fontFamily: "Quicksand",
+            fontSize: (widget.textStyle.fontSize ?? 12) + 2,
+          ))),
         },
         customRender: {
           'img': (context, child) {
@@ -418,9 +424,7 @@ class _EpubViewState extends State<EpubView> {
         },
         itemBuilder: (BuildContext context, int index) {
           final chapter = _chapters[index];
-
           return EpubBookChapterView(
-            chapter: chapter,
             style: widget.textStyle,
             content: htmlContent(chapter.HtmlContent ?? ''),
           );
@@ -430,7 +434,7 @@ class _EpubViewState extends State<EpubView> {
 
     return ScrollablePositionedList.builder(
       initialScrollIndex: _epubCfiReader!.paragraphIndexByCfiFragment ?? 0,
-      itemCount: _paragraphs.length,
+      itemCount: _chapters.length,
       itemScrollController: _itemScrollController,
       itemPositionsListener: _itemPositionListener,
       itemBuilder: _buildItem,
@@ -461,10 +465,7 @@ class _EpubViewState extends State<EpubView> {
       case _EpubViewLoadingState.success:
         content = KeyedSubtree(
           key: Key('$runtimeType.root.success'),
-          child:
-              // widget.isHorizontalView ?
-              // _horizontalItemBuild()
-              _buildLoaded(),
+          child: _buildLoaded(),
         );
         break;
     }
