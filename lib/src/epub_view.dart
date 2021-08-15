@@ -135,7 +135,8 @@ class _EpubViewState extends State<EpubView> {
       chapters: _chapters,
       paragraphs: _paragraphs,
     );
-    _itemPositionListener!.itemPositions.addListener(_changeListener);
+    // _itemPositionListener!.itemPositions.addListener(_changeListener);
+    _itemPositionListener!.itemPositions.addListener(_customHorizontalListener);
     _initialized = true;
     _bookLoaded.sink.add(true);
 
@@ -160,8 +161,20 @@ class _EpubViewState extends State<EpubView> {
     );
     _currentValue = EpubChapterViewValue(
       chapter: chapterIndex >= 0 ? _chapters[chapterIndex] : null,
-      chapterNumber: chapterIndex + 1,
-      paragraphNumber: paragraphIndex + 1,
+      chapterNumber: chapterIndex,
+      paragraphNumber: paragraphIndex,
+      position: position,
+    );
+    _actualChapter.sink.add(_currentValue);
+    widget.onChange?.call(_currentValue);
+  }
+
+  void _customHorizontalListener() {
+    final position = _itemPositionListener!.itemPositions.value.first;
+    _currentValue = EpubChapterViewValue(
+      chapter: _chapters[position.index],
+      chapterNumber: position.index,
+      paragraphNumber: 0,
       position: position,
     );
     _actualChapter.sink.add(_currentValue);
@@ -354,21 +367,19 @@ class _EpubViewState extends State<EpubView> {
         ),
       );
   Widget _defaultItemBuilder(int index) {
-    if (_chapters[index].HtmlContent!.isEmpty) {
+    if (_paragraphs.isEmpty) {
       return Container();
     }
 
-    final chapterIndex = _getChapterIndexBy(positionIndex: index);
+    // final chapterIndex = _getChapterIndexBy(positionIndex: index);
 
     return SingleChildScrollView(
-      scrollDirection:
-          widget.isHorizontalView ? Axis.vertical : Axis.horizontal,
       child: Column(
         children: <Widget>[
-          if (chapterIndex >= 0 &&
-              _getParagraphIndexBy(positionIndex: index) == 0)
-            _buildDivider(_chapters[chapterIndex]),
-          htmlContent(_chapters[index].HtmlContent!),
+          // if (chapterIndex >= 0 &&
+          //     _getParagraphIndexBy(positionIndex: index) == 0)
+          // _buildDivider(_chapters[chapterIndex]),
+          htmlContent(_chapters[index].HtmlContent ?? ''),
         ],
       ),
     );
@@ -386,7 +397,7 @@ class _EpubViewState extends State<EpubView> {
           'h1': Style(
             textAlign: TextAlign.left,
           ).merge(Style.fromTextStyle(widget.textStyle.copyWith(
-            fontFamily: "Quicksand",
+            fontFamily: 'Quicksand',
             fontSize: (widget.textStyle.fontSize ?? 12) + 2,
           ))),
         },
