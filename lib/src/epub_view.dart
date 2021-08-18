@@ -136,7 +136,8 @@ class _EpubViewState extends State<EpubView> {
       paragraphs: _paragraphs,
     );
     // _itemPositionListener!.itemPositions.addListener(_changeListener);
-    _itemPositionListener!.itemPositions.addListener(_customHorizontalListener);
+    _itemPositionListener!.itemPositions
+        .addListener(_customVerticalChangeScrollListener);
     _initialized = true;
     _bookLoaded.sink.add(true);
 
@@ -169,11 +170,11 @@ class _EpubViewState extends State<EpubView> {
     widget.onChange?.call(_currentValue);
   }
 
-  void _customHorizontalListener() {
+  void _customVerticalChangeScrollListener() {
     final position = _itemPositionListener!.itemPositions.value.first;
     _currentValue = EpubChapterViewValue(
       chapter: _chapters[position.index],
-      chapterNumber: position.index,
+      chapterNumber: position.index + 1,
       paragraphNumber: 0,
       position: position,
     );
@@ -427,7 +428,7 @@ class _EpubViewState extends State<EpubView> {
           _currentValue = EpubChapterViewValue(
             chapter: _chapters[val],
             chapterNumber: val + 1,
-            paragraphNumber: 1,
+            paragraphNumber: 0,
             position: _itemPositionListener!.itemPositions.value.first,
           );
           _actualChapter.sink.add(_currentValue);
