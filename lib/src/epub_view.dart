@@ -56,6 +56,7 @@ class EpubView extends StatefulWidget {
     this.paragraphPadding = const EdgeInsets.symmetric(horizontal: 8),
     this.textStyle = _defaultTextStyle,
     this.isHorizontalView = false,
+    this.initialIndex = 0,
     Key? key,
   }) : super(key: key);
 
@@ -79,6 +80,7 @@ class EpubView extends StatefulWidget {
   final ChaptersBuilder? itemBuilder;
   final TextStyle textStyle;
   final bool isHorizontalView;
+  final int initialIndex;
 
   @override
   _EpubViewState createState() => _EpubViewState();
@@ -106,14 +108,16 @@ class _EpubViewState extends State<EpubView> {
   void initState() {
     _itemScrollController = ItemScrollController();
     _itemPositionListener = ItemPositionsListener.create();
-    _horizontalPageController = PageController();
+    _horizontalPageController =
+        PageController(initialPage: widget.initialIndex);
     widget.controller._attach(this);
     super.initState();
   }
 
   @override
   void dispose() {
-    _itemPositionListener!.itemPositions.removeListener(_changeListener);
+    _itemPositionListener!.itemPositions
+        .removeListener(_customVerticalChangeScrollListener);
     _horizontalPageController?.dispose();
     _actualChapter.close();
     widget.controller._detach();
@@ -421,19 +425,12 @@ class _EpubViewState extends State<EpubView> {
         _defaultItemBuilder(index);
 
     if (widget.isHorizontalView) {
+      _horizontalPageChangedListener(widget
+          .initialIndex); // this need to call to update the chapter value first
       return PageView.builder(
         itemCount: _chapters.length,
         controller: _horizontalPageController,
-        onPageChanged: (val) {
-          _currentValue = EpubChapterViewValue(
-            chapter: _chapters[val],
-            chapterNumber: val + 1,
-            paragraphNumber: 0,
-            position: _itemPositionListener!.itemPositions.value.first,
-          );
-          _actualChapter.sink.add(_currentValue);
-          widget.onChange?.call(_currentValue);
-        },
+        onPageChanged: _horizontalPageChangedListener,
         itemBuilder: (BuildContext context, int index) {
           final chapter = _chapters[index];
           return EpubBookChapterView(
@@ -445,12 +442,25 @@ class _EpubViewState extends State<EpubView> {
     }
 
     return ScrollablePositionedList.builder(
-      initialScrollIndex: _epubCfiReader!.paragraphIndexByCfiFragment ?? 0,
+      initialScrollIndex:
+          _epubCfiReader!.paragraphIndexByCfiFragment ?? widget.initialIndex,
       itemCount: _chapters.length,
       itemScrollController: _itemScrollController,
       itemPositionsListener: _itemPositionListener,
       itemBuilder: _buildItem,
     );
+  }
+
+  void _horizontalPageChangedListener(int index) {
+    _currentValue = EpubChapterViewValue(
+      chapter: _chapters[index],
+      chapterNumber: index + 1,
+      paragraphNumber: 0,
+      position:
+          ItemPosition(index: index, itemLeadingEdge: 0, itemTrailingEdge: 0),
+    );
+    _actualChapter.sink.add(_currentValue);
+    widget.onChange?.call(_currentValue);
   }
 
   @override
