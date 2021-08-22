@@ -103,13 +103,15 @@ class _EpubViewState extends State<EpubView> {
   final BehaviorSubject<bool> _bookLoaded = BehaviorSubject();
 
   PageController? _horizontalPageController;
+  int _activeChapterIndex = 0;
 
   @override
   void initState() {
+    _activeChapterIndex = widget.initialIndex;
     _itemScrollController = ItemScrollController();
     _itemPositionListener = ItemPositionsListener.create();
     _horizontalPageController =
-        PageController(initialPage: widget.initialIndex);
+        PageController(initialPage: _activeChapterIndex);
     widget.controller._attach(this);
     super.initState();
   }
@@ -176,6 +178,7 @@ class _EpubViewState extends State<EpubView> {
 
   void _customVerticalChangeScrollListener() {
     final position = _itemPositionListener!.itemPositions.value.first;
+    _activeChapterIndex = position.index;
     _currentValue = EpubChapterViewValue(
       chapter: _chapters[position.index],
       chapterNumber: position.index + 1,
@@ -425,8 +428,12 @@ class _EpubViewState extends State<EpubView> {
         _defaultItemBuilder(index);
 
     if (widget.isHorizontalView) {
-      _horizontalPageChangedListener(widget
-          .initialIndex); // this need to call to update the chapter value first
+      // this need to call to update the chapter value first
+      _horizontalPageChangedListener(_activeChapterIndex);
+      _horizontalPageController?.dispose();
+      _horizontalPageController =
+          PageController(initialPage: _activeChapterIndex);
+
       return PageView.builder(
         itemCount: _chapters.length,
         controller: _horizontalPageController,
@@ -443,7 +450,7 @@ class _EpubViewState extends State<EpubView> {
 
     return ScrollablePositionedList.builder(
       initialScrollIndex:
-          _epubCfiReader!.paragraphIndexByCfiFragment ?? widget.initialIndex,
+          _epubCfiReader!.paragraphIndexByCfiFragment ?? _activeChapterIndex,
       itemCount: _chapters.length,
       itemScrollController: _itemScrollController,
       itemPositionsListener: _itemPositionListener,
@@ -452,6 +459,7 @@ class _EpubViewState extends State<EpubView> {
   }
 
   void _horizontalPageChangedListener(int index) {
+    _activeChapterIndex = index;
     _currentValue = EpubChapterViewValue(
       chapter: _chapters[index],
       chapterNumber: index + 1,
