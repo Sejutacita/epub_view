@@ -404,10 +404,14 @@ class _EpubViewState extends State<EpubView> {
           ).merge(Style.fromTextStyle(widget.textStyle)),
           'h1': Style(
             textAlign: TextAlign.left,
-          ).merge(Style.fromTextStyle(widget.textStyle.copyWith(
-            fontFamily: 'Quicksand',
-            fontSize: (widget.textStyle.fontSize ?? 12) + 2,
-          ))),
+          ).merge(
+            Style.fromTextStyle(
+              widget.textStyle.copyWith(
+                  fontFamily: 'Quicksand',
+                  fontSize: (widget.textStyle.fontSize ?? 12) + 2,
+                  color: Colors.black),
+            ),
+          ),
         },
         customRender: {
           'img': (context, child) {
