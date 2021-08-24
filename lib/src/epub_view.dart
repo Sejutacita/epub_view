@@ -185,6 +185,18 @@ class _EpubViewState extends State<EpubView> {
       paragraphNumber: 0,
       position: position,
     );
+
+    if (_itemPositionListener!.itemPositions.value.last.index ==
+        _chapters.length - 1) {
+      _currentValue = EpubChapterViewValue(
+        chapter: _chapters[position.index],
+        chapterNumber:
+            _itemPositionListener!.itemPositions.value.last.index + 1,
+        paragraphNumber: 0,
+        position: position,
+      );
+    }
+
     _actualChapter.sink.add(_currentValue);
     widget.onChange?.call(_currentValue);
   }
