@@ -186,7 +186,7 @@ class _EpubViewState extends State<EpubView> {
       position: position,
     );
 
-    if (_itemPositionListener!.itemPositions.value.last.index ==
+    if (_itemPositionListener!.itemPositions.value.last.index >=
         _chapters.length - 1) {
       _currentValue = EpubChapterViewValue(
         chapter: _chapters[position.index],
@@ -407,8 +407,10 @@ class _EpubViewState extends State<EpubView> {
 
   Widget htmlContent(String htmlString) => Html(
         data: htmlString,
-        onLinkTap: (href, _, __, ___) =>
-            _onLinkPressed(href!, widget.onExternalLinkPressed),
+        onLinkTap: (href, _, __, ___) => _onLinkPressed(
+          href ?? '',
+          widget.onExternalLinkPressed,
+        ),
         style: {
           'html': Style(
             padding: widget.paragraphPadding as EdgeInsets?,
@@ -421,7 +423,6 @@ class _EpubViewState extends State<EpubView> {
               widget.textStyle.copyWith(
                 fontFamily: 'Quicksand',
                 fontSize: (widget.textStyle.fontSize ?? 14) + 4,
-                color: Colors.black,
               ),
             ),
           ),
@@ -432,7 +433,6 @@ class _EpubViewState extends State<EpubView> {
               widget.textStyle.copyWith(
                 fontFamily: 'Quicksand',
                 fontSize: (widget.textStyle.fontSize ?? 14) + 2,
-                color: Colors.black,
               ),
             ),
           ),
