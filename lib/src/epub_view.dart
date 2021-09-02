@@ -396,9 +396,6 @@ class _EpubViewState extends State<EpubView> {
     return SingleChildScrollView(
       child: Column(
         children: <Widget>[
-          // if (chapterIndex >= 0 &&
-          //     _getParagraphIndexBy(positionIndex: index) == 0)
-          // _buildDivider(_chapters[chapterIndex]),
           htmlContent(_chapters[index].HtmlContent ?? ''),
         ],
       ),
@@ -448,8 +445,32 @@ class _EpubViewState extends State<EpubView> {
               ),
             );
           },
+          "ol": (RenderContext context, Widget child) {
+            dom.Element? element = context.tree.element;
+            return _customOrderedListItem(element);
+          },
         },
       );
+
+  Wrap _customOrderedListItem(dom.Element? element) {
+    List<dom.Element>? listIttemElement =
+        parse(element?.innerHtml ?? '').body?.children;
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 4,
+      children: [
+        Text(
+          "${listIttemElement?.first.attributes['value'] ?? 1}. ${listIttemElement?.first.text ?? ''}",
+          style: widget.textStyle.copyWith(
+            fontFamily: 'Quicksand',
+            fontSize: (widget.textStyle.fontSize ?? 14) + 2,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.left,
+        ),
+      ],
+    );
+  }
 
   Widget _buildLoaded() {
     Widget _buildItem(BuildContext context, int index) =>
