@@ -411,7 +411,7 @@ class _EpubViewState extends State<EpubView> {
         style: {
           'html': Style(
             padding: widget.paragraphPadding as EdgeInsets?,
-            textAlign: TextAlign.justify,
+            textAlign: TextAlign.start,
           ).merge(Style.fromTextStyle(widget.textStyle)),
           'h1': Style(
             textAlign: TextAlign.left,
