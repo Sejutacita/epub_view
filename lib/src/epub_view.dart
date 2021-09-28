@@ -455,20 +455,28 @@ class _EpubViewState extends State<EpubView> {
   Wrap _customOrderedListItem(dom.Element? element) {
     List<dom.Element>? listIttemElement =
         parse(element?.innerHtml ?? '').body?.children;
+
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: 4,
-      children: [
-        Text(
-          "${listIttemElement?.first.attributes['value'] ?? 1}. ${listIttemElement?.first.text ?? ''}",
-          style: widget.textStyle.copyWith(
-            fontFamily: 'Quicksand',
-            fontSize: (widget.textStyle.fontSize ?? 14) + 2,
-            fontWeight: FontWeight.bold,
-          ),
-          textAlign: TextAlign.left,
-        ),
-      ],
+      children: (listIttemElement != null && listIttemElement != [])
+          ? listIttemElement
+              .mapIndexed(
+                (int index, dom.Element element) => Padding(
+                  padding: EdgeInsets.only(top: 4),
+                  child: Text(
+                    "${element.attributes['value'] ?? (index + 1)}. ${element.text}",
+                    style: widget.textStyle.copyWith(
+                      fontFamily: 'Quicksand',
+                      fontSize: (widget.textStyle.fontSize ?? 14),
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
+                ),
+              )
+              .toList()
+          : [SizedBox()],
     );
   }
 
