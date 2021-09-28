@@ -463,7 +463,7 @@ class _EpubViewState extends State<EpubView> {
           ? listIttemElement
               .mapIndexed(
                 (int index, dom.Element element) => Padding(
-                  padding: EdgeInsets.only(top: 4),
+                  padding: EdgeInsets.only(top: index == 0 ? 0 : 4),
                   child: Text(
                     "${element.attributes['value'] ?? (index + 1)}. ${element.text}",
                     style: widget.textStyle.copyWith(
