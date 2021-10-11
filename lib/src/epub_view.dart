@@ -418,7 +418,7 @@ class _EpubViewState extends State<EpubView> {
           ).merge(
             Style.fromTextStyle(
               widget.textStyle.copyWith(
-                fontFamily: 'Quicksand',
+                fontFamily: 'Helvetica',
                 fontSize: (widget.textStyle.fontSize ?? 14) + 4,
               ),
             ),
@@ -428,7 +428,7 @@ class _EpubViewState extends State<EpubView> {
           ).merge(
             Style.fromTextStyle(
               widget.textStyle.copyWith(
-                fontFamily: 'Quicksand',
+                fontFamily: 'Helvetica',
                 fontSize: (widget.textStyle.fontSize ?? 14) + 2,
               ),
             ),
@@ -467,7 +467,7 @@ class _EpubViewState extends State<EpubView> {
                   child: Text(
                     "${element.attributes['value'] ?? (index + 1)}. ${element.text}",
                     style: widget.textStyle.copyWith(
-                      fontFamily: 'Quicksand',
+                      fontFamily: 'Helvetica',
                       fontSize: (widget.textStyle.fontSize ?? 14),
                       fontWeight: FontWeight.bold,
                     ),
