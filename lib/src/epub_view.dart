@@ -7,11 +7,12 @@ import 'package:epubx/epubx.dart' hide Image;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' show parse;
 import 'package:rxdart/rxdart.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-
+import 'package:csslib/parser.dart' as css;
 import 'epub_cfi/generator.dart';
 import 'epub_cfi/interpreter.dart';
 import 'epub_cfi/parser.dart';
@@ -123,6 +124,7 @@ class _EpubViewState extends State<EpubView> {
     _horizontalPageController?.dispose();
     _actualChapter.close();
     widget.controller._detach();
+    _bookLoaded.close();
     super.dispose();
   }
 
@@ -148,32 +150,6 @@ class _EpubViewState extends State<EpubView> {
     _bookLoaded.sink.add(true);
 
     return true;
-  }
-
-  void _changeListener() {
-    if (_paragraphs.isEmpty ||
-        _itemPositionListener!.itemPositions.value.isEmpty) {
-      return;
-    }
-    final position = _itemPositionListener!.itemPositions.value.first;
-    final chapterIndex = _getChapterIndexBy(
-      positionIndex: position.index,
-      trailingEdge: position.itemTrailingEdge,
-      leadingEdge: position.itemLeadingEdge,
-    );
-    final paragraphIndex = _getParagraphIndexBy(
-      positionIndex: position.index,
-      trailingEdge: position.itemTrailingEdge,
-      leadingEdge: position.itemLeadingEdge,
-    );
-    _currentValue = EpubChapterViewValue(
-      chapter: chapterIndex >= 0 ? _chapters[chapterIndex] : null,
-      chapterNumber: chapterIndex,
-      paragraphNumber: paragraphIndex,
-      position: position,
-    );
-    _actualChapter.sink.add(_currentValue);
-    widget.onChange?.call(_currentValue);
   }
 
   void _customVerticalChangeScrollListener() {
@@ -299,48 +275,6 @@ class _EpubViewState extends State<EpubView> {
         return false;
       });
 
-  int _getChapterIndexBy({
-    required int positionIndex,
-    double? trailingEdge,
-    double? leadingEdge,
-  }) {
-    final posIndex = _getAbsParagraphIndexBy(
-      positionIndex: positionIndex,
-      trailingEdge: trailingEdge,
-      leadingEdge: leadingEdge,
-    );
-    final index = posIndex >= _chapterIndexes.last
-        ? _chapterIndexes.length
-        : _chapterIndexes.indexWhere((chapterIndex) {
-            if (posIndex < chapterIndex) {
-              return true;
-            }
-            return false;
-          });
-
-    return index - 1;
-  }
-
-  int _getParagraphIndexBy({
-    required int positionIndex,
-    double? trailingEdge,
-    double? leadingEdge,
-  }) {
-    final posIndex = _getAbsParagraphIndexBy(
-      positionIndex: positionIndex,
-      trailingEdge: trailingEdge,
-      leadingEdge: leadingEdge,
-    );
-
-    final index = _getChapterIndexBy(positionIndex: posIndex);
-
-    if (index == -1) {
-      return posIndex;
-    }
-
-    return posIndex - _chapterIndexes[index];
-  }
-
   int _getAbsParagraphIndexBy({
     required int positionIndex,
     double? trailingEdge,
@@ -368,24 +302,6 @@ class _EpubViewState extends State<EpubView> {
     });
   }
 
-  Widget _buildDivider(EpubChapter chapter) =>
-      widget.dividerBuilder?.call(chapter) ??
-      Container(
-        height: 56,
-        width: double.infinity,
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Color(0x24000000),
-        ),
-        alignment: Alignment.centerLeft,
-        child: Text(
-          chapter.Title ?? '',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      );
   Widget _defaultItemBuilder(int index) {
     if (_paragraphs.isEmpty) {
       return Container();
@@ -402,65 +318,177 @@ class _EpubViewState extends State<EpubView> {
     );
   }
 
-  Widget htmlContent(String htmlString) => Html(
-        data: htmlString,
-        onLinkTap: (href, _, __, ___) => _onLinkPressed(
-          href ?? '',
-          widget.onExternalLinkPressed,
-        ),
-        style: {
-          'html': Style(
-            padding: widget.paragraphPadding as EdgeInsets?,
-            textAlign: TextAlign.start,
-          ).merge(Style.fromTextStyle(widget.textStyle)),
-          'h1': Style(
-            textAlign: TextAlign.left,
-          ).merge(
-            Style.fromTextStyle(
-              widget.textStyle.copyWith(
-                fontFamily: 'Helvetica',
-                fontSize: (widget.textStyle.fontSize ?? 14) + 4,
-              ),
-            ),
-          ),
-          'h2': Style(
-            textAlign: TextAlign.left,
-          ).merge(
-            Style.fromTextStyle(
-              widget.textStyle.copyWith(
-                fontFamily: 'Helvetica',
-                fontSize: (widget.textStyle.fontSize ?? 14) + 2,
-              ),
-            ),
-          ),
-        },
-        customRender: {
-          'img': (context, child) {
-            final url =
-                context.tree.element!.attributes['src']!.replaceAll('../', '');
-            return Image(
-              image: MemoryImage(
-                Uint8List.fromList(widget
-                    .controller._document!.Content!.Images![url]!.Content!),
-              ),
-            );
-          },
-          "ol": (RenderContext context, Widget child) {
-            dom.Element? element = context.tree.element;
-            return _customOrderedListItem(element);
-          },
-        },
-      );
+  //This function is to search if there are `key` style in the CSS files and return the block
+  String getCSSBlock(String key) {
+    String styles = '';
+    try {
+      String? styleSheet =
+          widget.controller._document!.Content?.Css?['stylesheet.css']?.Content;
+      List<String> styleSheets = styleSheet?.split('}\n') ?? [];
+      var styleSheetParsed = css.parse(styleSheet);
+      styleSheetParsed.topLevels.forEach((node) {
+        if (node.toDebugString().contains(key)) {
+          styleSheets.forEach((element) {
+            if (element.contains(node.span?.text ?? '')) {
+              styles += element;
+              styles += '}';
+            }
+          });
+        }
+      });
+    } catch (_) {}
+    return styles;
+  }
 
-  Wrap _customOrderedListItem(dom.Element? element) {
+  Widget htmlContent(String htmlString) {
+    final TextStyle epubTextStyle = widget.textStyle.copyWith(
+      fontFamily: 'Helvetica',
+    );
+    return Html(
+      data: htmlString.replaceAll(
+        '<link rel="stylesheet" type="text/css" href="stylesheet.css"/>',
+        '<style>${getCSSBlock('italic')}</style>',
+      ),
+      onLinkTap: (href, _, __, ___) => _onLinkPressed(
+        href ?? '',
+        widget.onExternalLinkPressed,
+      ),
+      style: {
+        'html': Style(
+          padding: widget.paragraphPadding as EdgeInsets?,
+          textAlign: TextAlign.start,
+        ).merge(Style.fromTextStyle(epubTextStyle)),
+        'h1': Style(
+          textAlign: TextAlign.left,
+          margin: EdgeInsets.zero,
+          padding: EdgeInsets.zero,
+        ).merge(
+          Style.fromTextStyle(
+            epubTextStyle.copyWith(
+              fontSize: (epubTextStyle.fontSize ?? 14) + 4,
+            ),
+          ),
+        ),
+        'h2': Style(
+          textAlign: TextAlign.left,
+          margin: EdgeInsets.zero,
+          padding: EdgeInsets.zero,
+        ).merge(
+          Style.fromTextStyle(
+            epubTextStyle.copyWith(
+              fontSize: (epubTextStyle.fontSize ?? 14) + 2,
+            ),
+          ),
+        ),
+        'li': Style(
+          textAlign: TextAlign.left,
+          margin: EdgeInsets.zero,
+          padding: EdgeInsets.zero,
+        ).merge(
+          Style.fromTextStyle(
+            epubTextStyle.copyWith(
+              fontSize: (epubTextStyle.fontSize ?? 14),
+            ),
+          ),
+        ),
+        'ol': Style(
+          textAlign: TextAlign.left,
+          margin: EdgeInsets.zero,
+          padding: EdgeInsets.zero,
+        ).merge(
+          Style.fromTextStyle(
+            epubTextStyle.copyWith(
+              fontSize: (epubTextStyle.fontSize ?? 14),
+            ),
+          ),
+        ),
+        'p': Style(
+          textAlign: TextAlign.left,
+          margin: EdgeInsets.only(top: 8),
+          padding: EdgeInsets.only(bottom: 0.6),
+        ).merge(
+          Style.fromTextStyle(
+            epubTextStyle.copyWith(
+              fontSize: (epubTextStyle.fontSize ?? 14),
+            ),
+          ),
+        ),
+        'span': Style(
+          textAlign: TextAlign.left,
+          margin: EdgeInsets.zero,
+          padding: EdgeInsets.zero,
+        ).merge(
+          Style.fromTextStyle(
+            epubTextStyle.copyWith(
+              fontSize: (epubTextStyle.fontSize ?? 14),
+            ),
+          ),
+        ),
+      },
+      shrinkWrap: true,
+      customRender: {
+        'img': (context, child) {
+          final url =
+              context.tree.element!.attributes['src']!.replaceAll('../', '');
+          return Image(
+            image: MemoryImage(
+              Uint8List.fromList(
+                widget.controller._document!.Content!.Images![url]!.Content!,
+              ),
+            ),
+          );
+        },
+        'h1': (RenderContext context, Widget child) {
+          if (context.tree.children.isNotEmpty) {
+            if (context.tree.children.first.toString() == '\" \"' ||
+                (context.tree.children.first.toString() == '\"\\n\"')) {
+              return SizedBox();
+            }
+            if (context.tree.children.length > 1) {
+              return Text(
+                context.tree.children.first.element?.text ?? '',
+                style: epubTextStyle.copyWith(
+                  fontFamily: 'Helvetica',
+                  fontWeight: FontWeight.bold,
+                  fontSize: (epubTextStyle.fontSize ?? 14) + 4,
+                ),
+              );
+            }
+          }
+          return null;
+        },
+        'p': (RenderContext context, Widget child) {
+          bool isEmptyText = false;
+
+          if (context.tree.children.isNotEmpty) {
+            isEmptyText = context.tree.children.first
+                    .toString()
+                    .replaceAll('\"', '')
+                    .length ==
+                1;
+          }
+
+          if (isEmptyText) return SizedBox();
+
+          return null;
+        },
+        "ol": (RenderContext context, Widget child) {
+          dom.Element? element = context.tree.element;
+          return _customOrderedListItem(element);
+        },
+      },
+    );
+  }
+
+  Widget? _customOrderedListItem(dom.Element? element) {
     List<dom.Element>? listIttemElement =
         parse(element?.innerHtml ?? '').body?.children;
-
-    return Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 4,
-      children: (listIttemElement != null && listIttemElement != [])
-          ? listIttemElement
+    if (listIttemElement != null && listIttemElement != []) {
+      if (listIttemElement.length == 1) {
+        return Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 4,
+          children: listIttemElement
               .mapIndexed(
                 (int index, dom.Element element) => Padding(
                   padding: EdgeInsets.only(top: index == 0 ? 0 : 4),
@@ -475,9 +503,25 @@ class _EpubViewState extends State<EpubView> {
                   ),
                 ),
               )
-              .toList()
-          : [SizedBox()],
-    );
+              .toList(),
+        );
+      } else {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
+          child: HtmlWidget(
+            element?.outerHtml ?? '',
+            textStyle: widget.textStyle.copyWith(
+              fontSize: (widget.textStyle.fontSize ?? 14) - 1.8,
+            ),
+            customStylesBuilder: (element) {
+              return {'margin': '0', 'padding': '0'};
+            },
+          ),
+        );
+      }
+    } else {
+      return null;
+    }
   }
 
   Widget _buildLoaded() {
@@ -498,7 +542,6 @@ class _EpubViewState extends State<EpubView> {
         itemBuilder: (BuildContext context, int index) {
           final chapter = _chapters[index];
           return EpubBookChapterView(
-            style: widget.textStyle,
             content: htmlContent(chapter.HtmlContent ?? ''),
           );
         },

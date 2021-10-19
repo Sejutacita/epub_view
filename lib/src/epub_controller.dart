@@ -148,6 +148,8 @@ class EpubController {
   }
 
   void dispose() {
+    _tableOfContentsStreamController.close();
+    _valueStreamController.close();
     _epubViewState = null;
   }
 }
