@@ -3,11 +3,9 @@ import 'package:flutter/rendering.dart';
 
 class EpubBookChapterView extends StatelessWidget {
   EpubBookChapterView({
-    required this.style,
     required this.content,
   });
 
-  final TextStyle style;
   final Widget content;
 
   @override

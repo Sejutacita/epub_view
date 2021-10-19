@@ -13,7 +13,8 @@ dependencies:
   epubx: 3.0.0-dev.3
   equatable: ^2.0.3
   html: ^0.15.0
-  flutter_html: ^2.1.0
+  flutter_html: ^2.1.5
+  flutter_widget_from_html: ^0.6.2
   scrollable_positioned_list: ^0.2.0-nullsafety.0
   rxdart: ^0.27.1
   collection: ^1.15.0
