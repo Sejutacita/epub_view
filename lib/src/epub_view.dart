@@ -345,10 +345,12 @@ class _EpubViewState extends State<EpubView> {
     );
 
     return Html(
-      data: htmlString.replaceAll(
-        '<link rel="stylesheet" type="text/css" href="stylesheet.css"/>',
-        '<style>${getCSSBlock('italic')}${getCSSBlock('bold')}</style>',
-      ),
+      data: htmlString
+          .replaceAll(
+            '<link rel="stylesheet" type="text/css" href="stylesheet.css"/>',
+            '<style>${getCSSBlock('italic')}${getCSSBlock('bold')}</style>',
+          )
+          .replaceAll('display: block;', ''),
       onLinkTap: (href, _, __, ___) => _onLinkPressed(
         href ?? '',
         widget.onExternalLinkPressed,
@@ -442,21 +444,26 @@ class _EpubViewState extends State<EpubView> {
         },
         'h1': (RenderContext context, Widget child) {
           if (context.tree.children.isNotEmpty) {
-            if (context.tree.children.first.toString() == '\" \"' ||
-                (context.tree.children.first.toString() == '\"\\n\"')) {
+            String text =
+                context.tree.children.first.element?.text.toString() ?? '';
+
+            if ((context.tree.children.first.toString() == '\" \"' ||
+                    context.tree.children.first.toString() == '\"\\n\"') &&
+                text.length <= 4) {
               return SizedBox();
             }
-            if (context.tree.children.length > 1) {
-              return Text(
-                context.tree.children.first.element?.text ?? '',
-                style: epubTextStyle.copyWith(
-                  fontFamily: 'Helvetica',
-                  fontWeight: FontWeight.bold,
-                  fontSize: (epubTextStyle.fontSize ?? 14) + 4,
-                ),
-              );
-            }
+
+            return Text(
+              context.tree.children.first.element?.text.replaceAll('\n', '') ??
+                  '',
+              style: epubTextStyle.copyWith(
+                fontFamily: 'Helvetica',
+                fontWeight: FontWeight.bold,
+                fontSize: (epubTextStyle.fontSize ?? 14) + 2,
+              ),
+            );
           }
+
           return null;
         },
         'p': (RenderContext context, Widget child) {

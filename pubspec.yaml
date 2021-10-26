@@ -23,11 +23,3 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   pedantic: ^1.11.0
-
-
-fonts:
-    - family: Helvetica
-      fonts:
-        - asset: assets/font/helvetica/Helvetica.ttf
-        - asset: assets/font/helvetica/Helvetica-Bold.ttf
-          weight: 700
