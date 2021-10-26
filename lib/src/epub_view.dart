@@ -7,7 +7,6 @@ import 'package:epubx/epubx.dart' hide Image;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' show parse;
 import 'package:rxdart/rxdart.dart';
@@ -344,10 +343,11 @@ class _EpubViewState extends State<EpubView> {
     final TextStyle epubTextStyle = widget.textStyle.copyWith(
       fontFamily: 'Helvetica',
     );
+
     return Html(
       data: htmlString.replaceAll(
         '<link rel="stylesheet" type="text/css" href="stylesheet.css"/>',
-        '<style>${getCSSBlock('italic')}</style>',
+        '<style>${getCSSBlock('italic')}${getCSSBlock('bold')}</style>',
       ),
       onLinkTap: (href, _, __, ___) => _onLinkPressed(
         href ?? '',
@@ -384,6 +384,8 @@ class _EpubViewState extends State<EpubView> {
           textAlign: TextAlign.left,
           margin: EdgeInsets.zero,
           padding: EdgeInsets.zero,
+          display: Display.LIST_ITEM,
+          listStylePosition: ListStylePosition.INSIDE,
         ).merge(
           Style.fromTextStyle(
             epubTextStyle.copyWith(
@@ -404,7 +406,7 @@ class _EpubViewState extends State<EpubView> {
         ),
         'p': Style(
           textAlign: TextAlign.left,
-          margin: EdgeInsets.only(top: 8),
+          margin: EdgeInsets.zero,
           padding: EdgeInsets.only(bottom: 0.6),
         ).merge(
           Style.fromTextStyle(
@@ -496,7 +498,7 @@ class _EpubViewState extends State<EpubView> {
                     "${element.attributes['value'] ?? (index + 1)}. ${element.text}",
                     style: widget.textStyle.copyWith(
                       fontFamily: 'Helvetica',
-                      fontSize: (widget.textStyle.fontSize ?? 14),
+                      fontSize: (widget.textStyle.fontSize ?? 14) - 2,
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.left,
@@ -506,18 +508,7 @@ class _EpubViewState extends State<EpubView> {
               .toList(),
         );
       } else {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
-          child: HtmlWidget(
-            element?.outerHtml ?? '',
-            textStyle: widget.textStyle.copyWith(
-              fontSize: (widget.textStyle.fontSize ?? 14) - 1.8,
-            ),
-            customStylesBuilder: (element) {
-              return {'margin': '0', 'padding': '0'};
-            },
-          ),
-        );
+        return null;
       }
     } else {
       return null;
