@@ -8,6 +8,7 @@ import 'package:epubx/epubx.dart' hide Image;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' show parse;
 import 'package:rxdart/rxdart.dart';
@@ -509,53 +510,39 @@ class _EpubViewState extends State<EpubView> {
               .mapIndexed(
                 (int index, dom.Element element) => Padding(
                   padding: EdgeInsets.only(top: index == 0 ? 0 : 4),
-                  child: Text(
-                    "${element.attributes['value'] ?? (index + 1)}. ${element.text}",
-                    style: epubTextStyle.copyWith(
-                      fontSize: customListFontSize,
-                      fontWeight: FontWeight.bold,
+                  child: Padding(
+                    padding: Platform.isIOS
+                        ? EdgeInsets.only(top: 8.0)
+                        : EdgeInsets.only(top: 4.0),
+                    child: Text(
+                      "${element.attributes['value'] ?? (index + 1)}. ${element.text}",
+                      style: epubTextStyle.copyWith(
+                        fontSize: customListFontSize,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.left,
                     ),
-                    textAlign: TextAlign.left,
                   ),
                 ),
               )
               .toList(),
         );
       } else {
-        return Html(
-          data: '${element?.outerHtml}',
-          shrinkWrap: true,
-          style: {
-            "body": Style(
-              margin:
-                  Platform.isIOS ? EdgeInsets.only(top: 16) : EdgeInsets.zero,
-              padding: EdgeInsets.zero,
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
+          child: HtmlWidget(
+            element?.outerHtml ?? '',
+            textStyle: epubTextStyle.copyWith(
+              fontSize: customListFontSize,
+              letterSpacing: 0.42,
             ),
-            'li': Style(
-              textAlign: TextAlign.left,
-              margin: EdgeInsets.zero,
-              padding: EdgeInsets.zero,
-              listStylePosition: ListStylePosition.INSIDE,
-            ).merge(
-              Style.fromTextStyle(
-                epubTextStyle.copyWith(
-                  fontSize: customListFontSize,
-                ),
-              ),
-            ),
-            'ol': Style(
-              textAlign: TextAlign.left,
-              margin: EdgeInsets.zero,
-              padding: EdgeInsets.zero,
-              listStylePosition: ListStylePosition.INSIDE,
-            ).merge(
-              Style.fromTextStyle(
-                epubTextStyle.copyWith(
-                  fontSize: customListFontSize,
-                ),
-              ),
-            ),
-          },
+            customStylesBuilder: (element) {
+              return {
+                'margin': '0',
+                'padding': '0',
+              };
+            },
+          ),
         );
       }
     } else {
