@@ -495,7 +495,7 @@ class _EpubViewState extends State<EpubView> {
       fontFamily: 'Helvetica',
     );
     final double customListFontSize = Platform.isIOS
-        ? (epubTextStyle.fontSize ?? 14) - 2
+        ? (epubTextStyle.fontSize ?? 14) - 1.86
         : (epubTextStyle.fontSize ?? 14);
 
     List<dom.Element>? listIttemElement =
@@ -527,7 +527,8 @@ class _EpubViewState extends State<EpubView> {
           shrinkWrap: true,
           style: {
             "body": Style(
-              margin: EdgeInsets.zero,
+              margin:
+                  Platform.isIOS ? EdgeInsets.only(top: 16) : EdgeInsets.zero,
               padding: EdgeInsets.zero,
             ),
             'li': Style(
