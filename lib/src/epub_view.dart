@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
@@ -495,53 +494,52 @@ class _EpubViewState extends State<EpubView> {
     final TextStyle epubTextStyle = widget.textStyle.copyWith(
       fontFamily: 'Helvetica',
     );
-    final double customListFontSize = Platform.isIOS
-        ? (epubTextStyle.fontSize ?? 14) - 1.86
-        : (epubTextStyle.fontSize ?? 14);
 
     List<dom.Element>? listIttemElement =
         parse(element?.innerHtml ?? '').body?.children;
     if (listIttemElement != null && listIttemElement != []) {
       if (listIttemElement.length == 1) {
-        return Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 4,
-          children: listIttemElement
-              .mapIndexed(
-                (int index, dom.Element element) => Padding(
-                  padding: EdgeInsets.only(top: index == 0 ? 0 : 4),
-                  child: Padding(
-                    padding: Platform.isIOS
-                        ? EdgeInsets.only(top: 8.0)
-                        : EdgeInsets.only(top: 4.0),
-                    child: Text(
-                      "${element.attributes['value'] ?? (index + 1)}. ${element.text}",
-                      style: epubTextStyle.copyWith(
-                        fontSize: customListFontSize,
-                        fontWeight: FontWeight.bold,
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaleFactor: 1),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            children: listIttemElement
+                .mapIndexed(
+                  (int index, dom.Element element) => Padding(
+                    padding: EdgeInsets.only(top: index == 0 ? 0 : 4),
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        "${element.attributes['value'] ?? (index + 1)}. ${element.text}",
+                        style: epubTextStyle.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.left,
                       ),
-                      textAlign: TextAlign.left,
                     ),
                   ),
-                ),
-              )
-              .toList(),
+                )
+                .toList(),
+          ),
         );
       } else {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
-          child: HtmlWidget(
-            element?.outerHtml ?? '',
-            textStyle: epubTextStyle.copyWith(
-              fontSize: customListFontSize,
-              letterSpacing: 0.42,
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaleFactor: 1),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
+            child: HtmlWidget(
+              element?.outerHtml.replaceAll('>&nbsp;', '>') ?? '',
+              textStyle: epubTextStyle.copyWith(
+                letterSpacing: 0.42,
+              ),
+              customStylesBuilder: (element) {
+                return {
+                  'margin': '0',
+                  'padding': '0',
+                };
+              },
             ),
-            customStylesBuilder: (element) {
-              return {
-                'margin': '0',
-                'padding': '0',
-              };
-            },
           ),
         );
       }
