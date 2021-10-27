@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart' show IterableExtension;
@@ -348,7 +349,7 @@ class _EpubViewState extends State<EpubView> {
       data: htmlString
           .replaceAll(
             '<link rel="stylesheet" type="text/css" href="stylesheet.css"/>',
-            '<style>${getCSSBlock('italic')}${getCSSBlock('bold')}</style>',
+            '<style>${getCSSBlock('italic')}</style>',
           )
           .replaceAll('display: block;', ''),
       onLinkTap: (href, _, __, ___) => _onLinkPressed(
@@ -367,7 +368,7 @@ class _EpubViewState extends State<EpubView> {
         ).merge(
           Style.fromTextStyle(
             epubTextStyle.copyWith(
-              fontSize: (epubTextStyle.fontSize ?? 14) + 4,
+              fontSize: (epubTextStyle.fontSize ?? 14) + 2,
             ),
           ),
         ),
@@ -378,7 +379,7 @@ class _EpubViewState extends State<EpubView> {
         ).merge(
           Style.fromTextStyle(
             epubTextStyle.copyWith(
-              fontSize: (epubTextStyle.fontSize ?? 14) + 2,
+              fontSize: (epubTextStyle.fontSize ?? 14) + 1,
             ),
           ),
         ),
@@ -408,7 +409,7 @@ class _EpubViewState extends State<EpubView> {
         ),
         'p': Style(
           textAlign: TextAlign.left,
-          margin: EdgeInsets.zero,
+          margin: EdgeInsets.only(top: 4),
           padding: EdgeInsets.only(bottom: 0.6),
         ).merge(
           Style.fromTextStyle(
@@ -490,6 +491,13 @@ class _EpubViewState extends State<EpubView> {
   }
 
   Widget? _customOrderedListItem(dom.Element? element) {
+    final TextStyle epubTextStyle = widget.textStyle.copyWith(
+      fontFamily: 'Helvetica',
+    );
+    final double customListFontSize = Platform.isIOS
+        ? (epubTextStyle.fontSize ?? 14) - 2
+        : (epubTextStyle.fontSize ?? 14);
+
     List<dom.Element>? listIttemElement =
         parse(element?.innerHtml ?? '').body?.children;
     if (listIttemElement != null && listIttemElement != []) {
@@ -503,9 +511,8 @@ class _EpubViewState extends State<EpubView> {
                   padding: EdgeInsets.only(top: index == 0 ? 0 : 4),
                   child: Text(
                     "${element.attributes['value'] ?? (index + 1)}. ${element.text}",
-                    style: widget.textStyle.copyWith(
-                      fontFamily: 'Helvetica',
-                      fontSize: (widget.textStyle.fontSize ?? 14) - 2,
+                    style: epubTextStyle.copyWith(
+                      fontSize: customListFontSize,
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.left,
@@ -515,7 +522,40 @@ class _EpubViewState extends State<EpubView> {
               .toList(),
         );
       } else {
-        return null;
+        return Html(
+          data: '${element?.outerHtml}',
+          shrinkWrap: true,
+          style: {
+            "body": Style(
+              margin: EdgeInsets.zero,
+              padding: EdgeInsets.zero,
+            ),
+            'li': Style(
+              textAlign: TextAlign.left,
+              margin: EdgeInsets.zero,
+              padding: EdgeInsets.zero,
+              listStylePosition: ListStylePosition.INSIDE,
+            ).merge(
+              Style.fromTextStyle(
+                epubTextStyle.copyWith(
+                  fontSize: customListFontSize,
+                ),
+              ),
+            ),
+            'ol': Style(
+              textAlign: TextAlign.left,
+              margin: EdgeInsets.zero,
+              padding: EdgeInsets.zero,
+              listStylePosition: ListStylePosition.INSIDE,
+            ).merge(
+              Style.fromTextStyle(
+                epubTextStyle.copyWith(
+                  fontSize: customListFontSize,
+                ),
+              ),
+            ),
+          },
+        );
       }
     } else {
       return null;
