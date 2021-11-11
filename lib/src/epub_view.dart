@@ -454,12 +454,6 @@ class _EpubViewState extends State<EpubView> {
           textAlign: TextAlign.left,
           margin: EdgeInsets.zero,
           padding: EdgeInsets.zero,
-        ).merge(
-          Style.fromTextStyle(
-            epubTextStyle.copyWith(
-              fontSize: (epubTextStyle.fontSize ?? 14),
-            ),
-          ),
         ),
       },
       shrinkWrap: true,
