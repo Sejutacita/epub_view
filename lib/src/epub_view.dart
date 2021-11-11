@@ -479,6 +479,15 @@ class _EpubViewState extends State<EpubView> {
               return SizedBox();
             }
 
+            if (context.tree.children.length > 1) {
+              ///If [isMultipleText] and the [text] length is more than 4 character, then it means that it is have more than one text
+              bool isMultipleText = context.tree.children
+                  .every((child) => (child.element?.text.length ?? 0) > 4);
+              if (isMultipleText) {
+                return null;
+              }
+            }
+
             return Text(
               context.tree.children.first.element?.text.replaceAll('\n', '') ??
                   '',
@@ -568,7 +577,7 @@ class _EpubViewState extends State<EpubView> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
             child: HtmlWidget(
-              '<style>${getCSSBlock('italic')}</style> ${element?.outerHtml.replaceAll('>&nbsp;', '>')}',
+              '${element?.outerHtml.replaceAll('>&nbsp;', '>')}',
               textStyle: epubTextStyle.copyWith(
                 letterSpacing: 0.42,
               ),
