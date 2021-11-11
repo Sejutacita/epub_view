@@ -524,6 +524,15 @@ class _EpubViewState extends State<EpubView> {
         parse(element?.innerHtml ?? '').body?.children;
     if (listIttemElement != null && listIttemElement != []) {
       if (listIttemElement.length == 1) {
+        final bool isElementHaveBoldStyle = (getCSSBlockFromKeyAndClassName(
+                    'bold', listIttemElement.first.className) !=
+                '' ||
+            listIttemElement.first.outerHtml.contains('</b>'));
+        final bool isElementHaveItalicStyle = (getCSSBlockFromKeyAndClassName(
+                    'italic', listIttemElement.first.className) !=
+                '' ||
+            listIttemElement.first.outerHtml.contains('</i>'));
+
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaleFactor: 1),
           child: Wrap(
@@ -538,7 +547,12 @@ class _EpubViewState extends State<EpubView> {
                       child: Text(
                         "${element.attributes['value'] ?? (index + 1)}. ${element.text}",
                         style: epubTextStyle.copyWith(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: isElementHaveBoldStyle
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          fontStyle: isElementHaveItalicStyle
+                              ? FontStyle.italic
+                              : FontStyle.normal,
                         ),
                         textAlign: TextAlign.left,
                       ),
