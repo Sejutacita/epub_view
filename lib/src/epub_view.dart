@@ -534,13 +534,19 @@ class _EpubViewState extends State<EpubView> {
         parse(element?.innerHtml ?? '').body?.children;
     if (listIttemElement != null && listIttemElement != []) {
       if (listIttemElement.length == 1) {
-        final String className = listIttemElement.first.className;
-        final bool isElementHaveBoldStyle =
-            (generatedBoldMap[className] ?? false) ||
-                listIttemElement.first.outerHtml.contains('</b>');
-        final bool isElementHaveItalicStyle =
+        dom.Element element = listIttemElement.first;
+        final String className = element.className;
+        bool isElementHaveBoldStyle = (generatedBoldMap[className] ?? false) ||
+            listIttemElement.first.outerHtml.contains('</b>');
+        bool isElementHaveItalicStyle =
             (generatedItalicMap[className] ?? false) ||
                 listIttemElement.first.outerHtml.contains('</i>');
+        isElementHaveBoldStyle = isElementHaveBoldStyle ||
+            element.children
+                .any((child) => generatedBoldMap[child.className] ?? false);
+        isElementHaveItalicStyle = isElementHaveItalicStyle ||
+            element.children
+                .any((child) => generatedItalicMap[child.className] ?? false);
 
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaleFactor: 1),
