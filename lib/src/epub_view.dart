@@ -318,7 +318,7 @@ class _EpubViewState extends State<EpubView> {
     );
   }
 
-  //This function is to search if there are `key` style in the CSS files and return the block
+  ///This function is to search if there are [key] style in the CSS files and return the block
   String getCSSBlock(String key) {
     String styles = '';
     try {
@@ -337,6 +337,31 @@ class _EpubViewState extends State<EpubView> {
         }
       });
     } catch (_) {}
+
+    return styles;
+  }
+
+  ///This function is to search if there are [key] and [className] style in the CSS files and return the block
+  String getCSSBlockFromKeyAndClassName(String key, String className) {
+    String styles = '';
+    try {
+      String? styleSheet =
+          widget.controller._document!.Content?.Css?['stylesheet.css']?.Content;
+      List<String> styleSheets = styleSheet?.split('}\n') ?? [];
+      var styleSheetParsed = css.parse(styleSheet);
+      styleSheetParsed.topLevels.forEach((node) {
+        if (node.toDebugString().contains(key) &&
+            node.toDebugString().contains(className)) {
+          styleSheets.forEach((element) {
+            if (element.contains(node.span?.text ?? '')) {
+              styles += element;
+              styles += '}';
+            }
+          });
+        }
+      });
+    } catch (_) {}
+
     return styles;
   }
 
@@ -529,15 +554,31 @@ class _EpubViewState extends State<EpubView> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
             child: HtmlWidget(
-              element?.outerHtml.replaceAll('>&nbsp;', '>') ?? '',
+              '<style>${getCSSBlock('italic')}</style> ${element?.outerHtml.replaceAll('>&nbsp;', '>')}',
               textStyle: epubTextStyle.copyWith(
                 letterSpacing: 0.42,
               ),
               customStylesBuilder: (element) {
-                return {
+                final bool isElementHaveItalicStyle =
+                    getCSSBlockFromKeyAndClassName(
+                            'italic', element.className) !=
+                        '';
+                final bool isElementHaveBoldStyle =
+                    getCSSBlockFromKeyAndClassName('bold', element.className) !=
+                        '';
+
+                Map<String, String> _tempMap = {
                   'margin': '0',
                   'padding': '0',
                 };
+                if (isElementHaveItalicStyle) {
+                  _tempMap['font-style'] = 'italic';
+                }
+                if (isElementHaveBoldStyle) {
+                  _tempMap['font-weight'] = 'bold';
+                }
+
+                return _tempMap;
               },
             ),
           ),
