@@ -318,65 +318,72 @@ class _EpubViewState extends State<EpubView> {
     );
   }
 
+  Map<String, bool> generatedBoldMap = {};
+  Map<String, bool> generatedItalicMap = {};
+  static const String boldStyleCSS = 'font-weight: bold;';
+  static const String italicStyleCSS = 'font-style: italic;';
+  String styleSheet = '';
+  String extractedStyleSheet = '';
+  var extractedStyleSheetParsed;
+
   ///This function is to search if there are [key] style in the CSS files and return the block
-  String getCSSBlock(String key) {
-    String styles = '';
+  Map<String, bool> getCSSMap(String key, String styleSheet) {
+    Map<String, bool> _generatedMap = {};
     try {
-      String? styleSheet =
-          widget.controller._document!.Content?.Css?['stylesheet.css']?.Content;
-      List<String> styleSheets = styleSheet?.split('}\n') ?? [];
-      var styleSheetParsed = css.parse(styleSheet);
-      styleSheetParsed.topLevels.forEach((node) {
-        if (node.toDebugString().contains(key)) {
-          styleSheets.forEach((element) {
-            if (element.contains(node.span?.text ?? '')) {
-              styles += element;
-              styles += '}';
-            }
-          });
+      if (extractedStyleSheetParsed == null) {
+        extractedStyleSheetParsed = css.parse(styleSheet);
+      }
+      extractedStyleSheetParsed.topLevels.forEach((node) {
+        if (key == 'bold') {
+          _generatedMap[node.span?.text.replaceAll('.', '') ?? ''] =
+              node.toDebugString().contains(key);
+        }
+        if (key == 'italic') {
+          _generatedMap[node.span?.text.replaceAll('.', '') ?? ''] =
+              node.toDebugString().contains(key);
         }
       });
     } catch (_) {}
-
-    return styles;
-  }
-
-  ///This function is to search if there are [key] and [className] style in the CSS files and return the block
-  String getCSSBlockFromKeyAndClassName(String key, String className) {
-    String styles = '';
-    try {
-      String? styleSheet =
-          widget.controller._document!.Content?.Css?['stylesheet.css']?.Content;
-      List<String> styleSheets = styleSheet?.split('}\n') ?? [];
-      var styleSheetParsed = css.parse(styleSheet);
-      styleSheetParsed.topLevels.forEach((node) {
-        if (node.toDebugString().contains(key) &&
-            node.toDebugString().contains(className)) {
-          styleSheets.forEach((element) {
-            if (element.contains(node.span?.text ?? '')) {
-              styles += element;
-              styles += '}';
-            }
-          });
-        }
-      });
-    } catch (_) {}
-
-    return styles;
+    return _generatedMap;
   }
 
   Widget htmlContent(String htmlString) {
     final TextStyle epubTextStyle = widget.textStyle.copyWith(
       fontFamily: 'Helvetica',
     );
-
+    if (styleSheet == '') {
+      styleSheet = widget
+              .controller._document!.Content?.Css?['stylesheet.css']?.Content ??
+          '';
+    }
+    if (generatedBoldMap.isEmpty) {
+      generatedBoldMap = getCSSMap('bold', styleSheet);
+    }
+    if (generatedItalicMap.isEmpty) {
+      generatedItalicMap = getCSSMap('italic', styleSheet);
+    }
+    if (extractedStyleSheet == '') {
+      generatedBoldMap.forEach((key, isBold) {
+        bool isItalic = generatedItalicMap[key] ?? false;
+        if (isBold) {
+          if (isItalic) {
+            extractedStyleSheet += '.$key {$boldStyleCSS\n$italicStyleCSS}\n';
+          } else {
+            extractedStyleSheet += '.$key {$boldStyleCSS}\n';
+          }
+        } else {
+          if (isItalic) {
+            extractedStyleSheet += '.$key {$italicStyleCSS}\n';
+          }
+        }
+      });
+    }
+    // return Text(extractedStyleSheet);
     return Html(
-      data: htmlString
-          .replaceAll(
-            '<link rel="stylesheet" type="text/css" href="stylesheet.css"/>',
-            '<style>${getCSSBlock('italic')}</style>',
-          )
-          .replaceAll('display: block;', ''),
+      data: htmlString.replaceAll(
+        '<link rel="stylesheet" type="text/css" href="stylesheet.css"/>',
+        '<style>$extractedStyleSheet</style>',
+      ),
       onLinkTap: (href, _, __, ___) => _onLinkPressed(
         href ?? '',
         widget.onExternalLinkPressed,
@@ -533,14 +540,13 @@ class _EpubViewState extends State<EpubView> {
         parse(element?.innerHtml ?? '').body?.children;
     if (listIttemElement != null && listIttemElement != []) {
       if (listIttemElement.length == 1) {
-        final bool isElementHaveBoldStyle = (getCSSBlockFromKeyAndClassName(
-                    'bold', listIttemElement.first.className) !=
-                '' ||
-            listIttemElement.first.outerHtml.contains('</b>'));
-        final bool isElementHaveItalicStyle = (getCSSBlockFromKeyAndClassName(
-                    'italic', listIttemElement.first.className) !=
-                '' ||
-            listIttemElement.first.outerHtml.contains('</i>'));
+        final String className = listIttemElement.first.className;
+        final bool isElementHaveBoldStyle =
+            (generatedBoldMap[className] ?? false) ||
+                listIttemElement.first.outerHtml.contains('</b>');
+        final bool isElementHaveItalicStyle =
+            (generatedItalicMap[className] ?? false) ||
+                listIttemElement.first.outerHtml.contains('</i>');
 
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaleFactor: 1),
@@ -582,13 +588,14 @@ class _EpubViewState extends State<EpubView> {
                 letterSpacing: 0.42,
               ),
               customStylesBuilder: (element) {
-                final bool isElementHaveItalicStyle =
-                    getCSSBlockFromKeyAndClassName(
-                            'italic', element.className) !=
-                        '';
-                final bool isElementHaveBoldStyle =
-                    getCSSBlockFromKeyAndClassName('bold', element.className) !=
-                        '';
+                final String className = element.className;
+                bool isElementHaveBoldStyle = false;
+                bool isElementHaveItalicStyle = false;
+                if (className != '') {
+                  isElementHaveBoldStyle = generatedBoldMap[className] ?? false;
+                  isElementHaveItalicStyle =
+                      generatedItalicMap[className] ?? false;
+                }
 
                 Map<String, String> _tempMap = {
                   'margin': '0',
