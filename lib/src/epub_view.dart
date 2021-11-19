@@ -511,8 +511,9 @@ class _EpubViewState extends State<EpubView> {
                     .replaceAll('\"', '')
                     .length ==
                 1;
+          } else {
+            isEmptyText = context.tree.element?.text == '';
           }
-
           if (isEmptyText) return SizedBox();
 
           return null;
